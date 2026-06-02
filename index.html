@@ -1,0 +1,450 @@
+html
+<!DOCTYPE html>
+<html lang="et">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Matemaatikaseiklus</title>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #eef7ff;
+      margin: 0;
+      padding: 20px;
+      text-align: center;
+      color: #17324d;
+    }
+
+    h1 {
+      color: #1f5f8b;
+      margin-bottom: 5px;
+    }
+
+    .kast {
+      background: white;
+      max-width: 950px;
+      margin: 20px auto;
+      padding: 24px;
+      border-radius: 20px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.15);
+    }
+
+    input, select {
+      font-size: 18px;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid #8aaac4;
+      margin: 6px;
+    }
+
+    button {
+      font-size: 18px;
+      padding: 12px 18px;
+      border-radius: 14px;
+      border: 2px solid #1f5f8b;
+      background: #dff1ff;
+      cursor: pointer;
+      margin: 6px;
+    }
+
+    button:hover {
+      background: #c7e7ff;
+    }
+
+    .esemed, .vastused {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 20px 0;
+    }
+
+    .ese {
+      font-size: 34px;
+      padding: 16px;
+      border-radius: 16px;
+      background: #f4fbff;
+      border: 2px solid #b8dfff;
+      min-width: 45px;
+    }
+
+    .vastusenupp {
+      font-size: 28px;
+      min-width: 80px;
+    }
+
+    #tagasiside {
+      font-size: 24px;
+      min-height: 36px;
+      font-weight: bold;
+    }
+
+    .oige {
+      color: #177a34;
+    }
+
+    .vale {
+      color: #c73333;
+    }
+
+    .opetaja {
+      margin-top: 30px;
+      border-top: 3px dashed #8ac7f0;
+      padding-top: 20px;
+    }
+
+    .kokkuvote {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 15px 0;
+    }
+
+    .andmekaart {
+      background: #f4fbff;
+      border: 1px solid #b8dfff;
+      border-radius: 14px;
+      padding: 12px 18px;
+      min-width: 140px;
+      font-weight: bold;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 18px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #9bbbd2;
+      padding: 8px;
+    }
+
+    th {
+      background: #dff1ff;
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .manguosa, .nupurida, #tagasiside {
+        display: none;
+      }
+
+      .kast {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🌟 Matemaatikaseiklus 🌟</h1>
+  <p>Harjuta loendamist, võrdlemist, kujundeid, liitmist ja lahutamist.</p>
+
+  <div class="kast">
+    <div class="manguosa">
+      <label for="lapseNimi">Lapse nimi:</label>
+      <input id="lapseNimi" type="text" placeholder="Kirjuta lapse nimi" />
+
+      <br />
+
+      <label for="raskus">Raskusaste:</label>
+      <select id="raskus">
+        <option value="lihtne">Lihtne</option>
+        <option value="keskmine">Keskmine</option>
+      </select>
+
+      <h2 id="ulesandeLiik"></h2>
+      <p id="kusimus"></p>
+
+      <div class="esemed" id="esemed"></div>
+      <div class="vastused" id="vastused"></div>
+
+      <p id="tagasiside"></p>
+
+      <div class="nupurida">
+        <button onclick="uusUlesanne()">Uus ülesanne</button>
+        <button onclick="loppetaMang()">Lõpeta mäng</button>
+      </div>
+    </div>
+
+    <div class="opetaja">
+      <h2>Õpetaja ülevaade</h2>
+
+      <div class="kokkuvote">
+        <div class="andmekaart" id="ulesandeidKokku">Ülesandeid: 0</div>
+        <div class="andmekaart" id="oigeidKokku">Õigeid vastuseid: 0</div>
+        <div class="andmekaart" id="edukus">Edukus: 0%</div>
+      </div>
+
+      <button onclick="laadiAllaCSV()">Laadi tulemused Exceli failina alla</button>
+      <button onclick="prindiTulemused()">Prindi tulemused</button>
+      <button onclick="kustutaTulemused()">Alusta uuesti</button>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Laps</th>
+            <th>Ülesande liik</th>
+            <th>Küsimus</th>
+            <th>Lapse vastus</th>
+            <th>Õige vastus</th>
+            <th>Vastuse õigsus</th>
+            <th>Aeg</th>
+          </tr>
+        </thead>
+        <tbody id="tulemusteTabel"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let praeguneUlesanne = null;
+    let tulemused = JSON.parse(localStorage.getItem("matemaatikamang_tulemused")) || [];
+
+    const kujundid = [
+      { nimi: "ring", mark: "⚪" },
+      { nimi: "ruut", mark: "⬛" },
+      { nimi: "kolmnurk", mark: "🔺" },
+      { nimi: "ristkülik", mark: "▭" }
+    ];
+
+    function juhuarv(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function sega(massiiv) {
+      return massiiv.sort(() => Math.random() - 0.5);
+    }
+
+    function looUlesanne() {
+      const liigid = [
+        looLoendamine,
+        looLiitmine,
+        looLahutamine,
+        looSuurimVoiVaikseim,
+        looKujund,
+        looRuhmitamine,
+        looHulkadeVordlemine
+      ];
+
+      const valitud = liigid[juhuarv(0, liigid.length - 1)];
+      return valitud();
+    }
+
+    function looLoendamine() {
+      const arv = juhuarv(1, 10);
+      return {
+        liik: "Loendamine 10 piires",
+        kusimus: "Mitu õuna sa näed?",
+        esemed: Array(arv).fill("🍎"),
+        vastused: sega([arv, Math.max(1, arv - 1), Math.min(10, arv + 1)]),
+        oige: arv
+      };
+    }
+
+    function looLiitmine() {
+      const a = juhuarv(1, 5);
+      const b = juhuarv(1, 10 - a);
+      return {
+        liik: "Liitmine",
+        kusimus: `Sul on ${a} palli ja saad ${b} palli juurde. Mitu palli on kokku?`,
+        esemed: [...Array(a).fill("⚽"), "+", ...Array(b).fill("⚽")],
+        vastused: sega([a + b, a + b - 1, Math.min(10, a + b + 1)]),
+        oige: a + b
+      };
+    }
+
+    function looLahutamine() {
+      const a = juhuarv(3, 10);
+      const b = juhuarv(1, a - 1);
+      return {
+        liik: "Lahutamine",
+        kusimus: `Sul on ${a} kommi ja annad ${b} kommi ära. Mitu kommi jääb alles?`,
+        esemed: Array(a).fill("🍬"),
+        vastused: sega([a - b, Math.max(0, a - b - 1), Math.min(10, a - b + 1)]),
+        oige: a - b
+      };
+    }
+
+    function looSuurimVoiVaikseim() {
+      const arvud = sega([juhuarv(1, 10), juhuarv(1, 10), juhuarv(1, 10), juhuarv(1, 10)]);
+      const otsiSuurimat = Math.random() > 0.5;
+      return {
+        liik: otsiSuurimat ? "Suurima arvu leidmine" : "Väikseima arvu leidmine",
+        kusimus: otsiSuurimat ? "Leia kõige suurem arv." : "Leia kõige väiksem arv.",
+        esemed: arvud,
+        vastused: arvud,
+        oige: otsiSuurimat ? Math.max(...arvud) : Math.min(...arvud)
+      };
+    }
+
+    function looKujund() {
+      const valitud = kujundid[juhuarv(0, kujundid.length - 1)];
+      return {
+        liik: "Põhikujundite tundmine",
+        kusimus: `Milline kujund on ${valitud.nimi}?`,
+        esemed: [],
+        vastused: sega(kujundid.map(k => k.mark)),
+        oige: valitud.mark
+      };
+    }
+
+    function looRuhmitamine() {
+      const punaseid = juhuarv(2, 5);
+      const siniseid = juhuarv(1, 4);
+      return {
+        liik: "Rühmitamine tunnuse alusel",
+        kusimus: "Mitu punast eset on pildil?",
+        esemed: sega([...Array(punaseid).fill("🔴"), ...Array(siniseid).fill("🔵")]),
+        vastused: sega([punaseid, Math.max(1, punaseid - 1), Math.min(10, punaseid + 1)]),
+        oige: punaseid
+      };
+    }
+
+    function looHulkadeVordlemine() {
+      let ounu = juhuarv(1, 6);
+      let pirne = juhuarv(1, 6);
+
+      while (ounu === pirne) {
+        pirne = juhuarv(1, 6);
+      }
+
+      return {
+        liik: "Hulkade võrdlemine",
+        kusimus: "Kumba hulka on rohkem?",
+        esemed: [
+          "Õunad: " + "🍎".repeat(ounu),
+          "Pirnid: " + "🍐".repeat(pirne)
+        ],
+        vastused: ["Õunu", "Pirne"],
+        oige: ounu > pirne ? "Õunu" : "Pirne"
+      };
+    }
+
+    function kuvaUlesanne() {
+      praeguneUlesanne = looUlesanne();
+
+      document.getElementById("ulesandeLiik").textContent = praeguneUlesanne.liik;
+      document.getElementById("kusimus").textContent = praeguneUlesanne.kusimus;
+      document.getElementById("tagasiside").textContent = "";
+
+      const esemeteAla = document.getElementById("esemed");
+      const vastusteAla = document.getElementById("vastused");
+
+      esemeteAla.innerHTML = "";
+      vastusteAla.innerHTML = "";
+
+      praeguneUlesanne.esemed.forEach(ese => {
+        const kast = document.createElement("div");
+        kast.className = "ese";
+        kast.textContent = ese;
+        esemeteAla.appendChild(kast);
+      });
+
+      praeguneUlesanne.vastused.forEach(vastus => {
+        const nupp = document.createElement("button");
+        nupp.className = "vastusenupp";
+        nupp.textContent = vastus;
+        nupp.onclick = () => kontrolliVastus(vastus);
+        vastusteAla.appendChild(nupp);
+      });
+    }
+
+    function kontrolliVastus(vastus) {
+      const lapseNimi = document.getElementById("lapseNimi").value.trim() || "Nimi puudub";
+      const oige = String(vastus) === String(praeguneUlesanne.oige);
+
+      const tagasiside = document.getElementById("tagasiside");
+      tagasiside.textContent = oige ? "Tubli! Vastus on õige. 😊" : "Proovi uuesti. Sa õpid hästi! 🙂";
+      tagasiside.className = oige ? "oige" : "vale";
+
+      tulemused.push({
+        laps: lapseNimi,
+        liik: praeguneUlesanne.liik,
+        kusimus: praeguneUlesanne.kusimus,
+        vastus: vastus,
+        oigeVastus: praeguneUlesanne.oige,
+        tulemus: oige ? "Õige vastus" : "Vajab harjutamist",
+        aeg: new Date().toLocaleString("et-EE")
+      });
+
+      localStorage.setItem("matemaatikamang_tulemused", JSON.stringify(tulemused));
+      uuendaOpetajaVaade();
+    }
+
+    function uusUlesanne() {
+      kuvaUlesanne();
+    }
+
+    function loppetaMang() {
+      document.getElementById("tagasiside").textContent = "Mäng on lõpetatud. Õpetaja saab tulemusi vaadata allpool.";
+      document.getElementById("tagasiside").className = "oige";
+    }
+
+    function uuendaOpetajaVaade() {
+      const tabel = document.getElementById("tulemusteTabel");
+      tabel.innerHTML = "";
+
+      tulemused.forEach(rida => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${rida.laps}</td>
+          <td>${rida.liik}</td>
+          <td>${rida.kusimus}</td>
+          <td>${rida.vastus}</td>
+          <td>${rida.oigeVastus}</td>
+          <td>${rida.tulemus}</td>
+          <td>${rida.aeg}</td>
+        `;
+        tabel.appendChild(tr);
+      });
+
+      const kokku = tulemused.length;
+      const oigeid = tulemused.filter(r => r.tulemus === "Õige vastus").length;
+      const protsent = kokku === 0 ? 0 : Math.round((oigeid / kokku) * 100);
+
+      document.getElementById("ulesandeidKokku").textContent = "Ülesandeid: " + kokku;
+      document.getElementById("oigeidKokku").textContent = "Õigeid vastuseid: " + oigeid;
+      document.getElementById("edukus").textContent = "Edukus: " + protsent + "%";
+    }
+
+    function laadiAllaCSV() {
+      let csv = "Laps;Ülesande liik;Küsimus;Lapse vastus;Õige vastus;Vastuse õigsus;Aeg\n";
+
+      tulemused.forEach(r => {
+        csv += `"${r.laps}";"${r.liik}";"${r.kusimus}";"${r.vastus}";"${r.oigeVastus}";"${r.tulemus}";"${r.aeg}"\n`;
+      });
+
+      const fail = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(fail);
+      link.download = "matemaatikaseikluse_tulemused.csv";
+      link.click();
+    }
+
+    function prindiTulemused() {
+      window.print();
+    }
+
+    function kustutaTulemused() {
+      if (confirm("Kas soovid kõik tulemused kustutada ja uuesti alustada?")) {
+        tulemused = [];
+        localStorage.removeItem("matemaatikamang_tulemused");
+        uuendaOpetajaVaade();
+        document.getElementById("tagasiside").textContent = "";
+      }
+    }
+
+    kuvaUlesanne();
+    uuendaOpetajaVaade();
+  </script>
+</body>
+</html>
+
